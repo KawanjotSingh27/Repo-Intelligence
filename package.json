@@ -1,0 +1,28 @@
+{
+  "name": "repo-intelligence",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KawanjotSingh27/Repo-Intelligence.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KawanjotSingh27/Repo-Intelligence/issues"
+  },
+  "homepage": "https://github.com/KawanjotSingh27/Repo-Intelligence#readme"
+}
