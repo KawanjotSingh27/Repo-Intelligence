@@ -1,23 +1,14 @@
 import fs from "fs";
 import path from "path";
 
-type FilePath=string;
-type FileNode={
-    path:FilePath;
-    imports:Set<string>;
-    dependents:Set<string>,
-    depth?:number;
-};
-type ScoreNode={
-    path:FilePath;
-    score:number;
-    direct:number;
-    indirect:number;
-    maxDepth:number;
+type FilePath = string;
+export type FileNode = {
+    path: FilePath;
+    imports: Set<string>;
+    dependents: Set<string>;
 };
 
-const graph=new Map<FilePath,FileNode>();
-const score=new Map<FilePath,ScoreNode>();
+export const graph = new Map<FilePath, FileNode>();
 
 function extractImports(code:string):string[]{
     const importRegex = /import\s+(?:.*?\s+from\s+)?["'](.+?)["']/g;
@@ -29,7 +20,7 @@ function extractImports(code:string):string[]{
     return imports;
 }
 
-function getAllFiles(dir: string): FilePath[] {
+export function getAllFiles(dir: string): FilePath[] {
   const files: FilePath[] = [];
   
   function walk(currentDir: string) {
@@ -83,21 +74,7 @@ function resolveImportPath(fromFile: string, importPath: string): FilePath | nul
     return null;
 }
 
-function buildScore(files:FilePath[]){
-    for(const file of files){
-        const impact=getAffectedFilesWithDepth(file);
-        const summary=summarizeImpact(impact);
-        score.set(file,{
-            path:file,
-            score:summary.score,
-            direct:summary.direct,
-            indirect:summary.indirect,
-            maxDepth:summary.maxDepth
-        });
-    }
-}
-
-function buildGraph(files: FilePath[]) {
+export function buildGraph(files: FilePath[]) {
     for (const file of files) {
         graph.set(file, {
             path: file,
@@ -130,7 +107,7 @@ function buildGraph(files: FilePath[]) {
     }
 }
 
-function getAffectedFilesWithDepth(start: FilePath): Map<FilePath, number> {
+export function getAffectedFilesWithDepth(start: FilePath): Map<FilePath, number> {
     const result = new Map<FilePath, number>();
     const queue: [FilePath, number][] = [[start, 0]];
 
@@ -149,41 +126,4 @@ function getAffectedFilesWithDepth(start: FilePath): Map<FilePath, number> {
     }
 
     return result;
-}
-
-function summarizeImpact(impact:Map<FilePath,number>){
-    let direct=0;
-    let indirect=0;
-    let maxDepth=0;
-    let score=impact.size;
-    for(const depth of impact.values()){
-        if(depth==1) direct++;
-        else indirect++;
-        maxDepth=Math.max(maxDepth,depth);
-    }
-    return {direct,indirect,maxDepth,score};
-}
-
-function computeRisk(impact:Map<FilePath,number>):number{
-    let score=0;
-    for(const depth of impact.values()){
-        score+=1/depth;
-    }
-    return score;
-}
-
-if (require.main == module) {
-    const files = getAllFiles("./test");
-    buildGraph(files);
-    buildScore(files);
-
-    console.log(score);
-
-    const start = path.resolve("./test/utils/index.ts");
-    const impact = getAffectedFilesWithDepth(start);
-    const risk=computeRisk(impact);
-    const summary=summarizeImpact(impact);
-    
-    console.log("Summary:",summary);
-    console.log("Risk Score:", risk.toFixed(2));
 }
