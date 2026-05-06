@@ -88,3 +88,7 @@ export function getCombinedImpact(starts: FilePath[]): Map<FilePath, number> {
 
     return combined;
 }
+
+export function resetScores(): void {
+    scoreMap.clear();
+}

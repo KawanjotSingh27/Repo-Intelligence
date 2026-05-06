@@ -7,6 +7,9 @@ export type FileNode = {
     imports: Set<string>;
     dependents: Set<string>;
 };
+type PathAliases = {
+    [alias: string]: string[];
+};
 
 export const graph = new Map<FilePath, FileNode>();
 
@@ -74,7 +77,7 @@ function resolveImportPath(fromFile: string, importPath: string): FilePath | nul
     return null;
 }
 
-export function buildGraph(files: FilePath[]) {
+export function buildGraph(files: FilePath[], aliases: PathAliases = {}): void {
     for (const file of files) {
         graph.set(file, {
             path: file,
@@ -87,9 +90,14 @@ export function buildGraph(files: FilePath[]) {
         const imports = extractImports(data);
 
         for (const imp of imports) {
-            if (!imp.startsWith(".")) continue;
+            let resolved: string | null = null;
 
-            const resolved = resolveImportPath(file, imp);
+            if (imp.startsWith(".")) {
+                resolved = resolveImportPath(file, imp);
+            } else {
+                resolved = resolveAliasedImport(imp, aliases, "");
+            }
+
             if (!resolved) continue;
 
             graph.get(file)?.imports.add(resolved);
@@ -126,4 +134,58 @@ export function getAffectedFilesWithDepth(start: FilePath): Map<FilePath, number
     }
 
     return result;
+}
+
+export function resetGraph(): void {
+    graph.clear();
+}
+
+export function loadPathAliases(projectDir: string): PathAliases {
+    const tsconfigPath = path.join(projectDir, "tsconfig.json");
+    
+    if (!fs.existsSync(tsconfigPath)) return {};
+    
+    try {
+        const raw = fs.readFileSync(tsconfigPath, "utf-8");
+        const tsconfig = JSON.parse(raw);
+        const paths = tsconfig?.compilerOptions?.paths;
+        const baseUrl = tsconfig?.compilerOptions?.baseUrl ?? ".";
+        
+        if (!paths) return {};
+        return { __baseUrl: [path.resolve(projectDir, baseUrl)], ...paths };
+    } catch {
+        return {};
+    }
+}
+
+function resolveAliasedImport(
+    importPath: string,
+    aliases: PathAliases,
+    projectDir: string
+): string | null {
+    const baseUrl = aliases.__baseUrl?.[0] ?? projectDir;
+
+    const baseResolved = resolveImportPath(baseUrl + "/index.ts", "./" + importPath);
+    if (baseResolved) return baseResolved;
+
+    for (const [alias, targets] of Object.entries(aliases)) {
+        if (alias === "__baseUrl") continue;
+
+        const aliasRegex = new RegExp("^" + alias.replace("*", "(.*)") + "$");
+        const match = importPath.match(aliasRegex);
+
+        if (!match) continue;
+
+        for (const target of targets) {
+            const resolvedTarget = target.replace("*", match[1] ?? "");
+            const fullPath = path.resolve(baseUrl, resolvedTarget);
+            const resolved = resolveImportPath(fullPath + "/index.ts", ".");
+            if (resolved) return resolved;
+
+            const direct = resolveImportPath(baseUrl + "/index.ts", "./" + resolvedTarget);
+            if (direct) return direct;
+        }
+    }
+
+    return null;
 }

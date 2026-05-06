@@ -96,7 +96,16 @@ app.post("/analyze-pr", async (req, res) => {
             summary: result.summary,
             criticalFiles: result.criticalFiles,
             combinedImpact: Object.fromEntries(result.combinedImpact),
-            prFiles
+            prFiles: prFiles,
+            graph: Object.fromEntries(
+                Array.from(graph.entries()).map(([file, node]) => [
+                    file,
+                    {
+                        imports: Array.from(node.imports),
+                        dependents: Array.from(node.dependents)
+                    }
+                ])
+            )
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to analyze PR" });

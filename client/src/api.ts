@@ -11,3 +11,8 @@ export async function fetchGraph(dir: string) {
     const res = await axios.get(`${BASE}/graph`, { params: { dir } });
     return res.data;
 }
+
+export async function analyzePR(prUrl: string) {
+    const res = await axios.post(`${BASE}/analyze-pr`, { prUrl });
+    return res.data;
+}
