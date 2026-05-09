@@ -16,3 +16,8 @@ export async function analyzePR(prUrl: string) {
     const res = await axios.post(`${BASE}/analyze-pr`, { prUrl });
     return res.data;
 }
+
+export async function fetchHistory(repoUrl: string) {
+    const res = await axios.get(`${BASE}/history`, { params: { repoUrl } });
+    return res.data;
+}

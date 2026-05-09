@@ -5,10 +5,21 @@ import { getAllFiles, buildGraph, graph } from "./graph";
 import cors from "cors";
 import { cloneRepo, cleanupRepo, extractRepoUrl, getPRFiles } from "./github";
 import fs from "fs";
+import { initDb, saveAnalysis, getAnalysisHistory } from "./db";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.get("/history", async (req, res) => {
+    const { repoUrl } = req.query;
+    if (!repoUrl) {
+        res.status(400).json({ error: "repoUrl is required" });
+        return;
+    }
+    const history = await getAnalysisHistory(repoUrl as string);
+    res.json(history);
+});
 
 app.post("/analyze", (req, res) => {
     const {dir,files}=req.body;
@@ -92,6 +103,13 @@ app.post("/analyze-pr", async (req, res) => {
         console.log("Dependents:", node?.dependents);
         console.log("PR files:", filesAbs);
         console.log("File exists:", filesAbs.map(f => fs.existsSync(f)));
+        await saveAnalysis(
+            extractRepoUrl(prUrl),
+            prUrl,
+            result.summary,
+            result.criticalFiles,
+            prFiles
+        );
         res.json({
             summary: result.summary,
             criticalFiles: result.criticalFiles,
@@ -112,6 +130,12 @@ app.post("/analyze-pr", async (req, res) => {
     } finally {
         if (dir) cleanupRepo(dir);
     }
+});
+
+initDb().then(() => {
+    console.log("Database initialized");
+}).catch(err => {
+    console.error("Database initialization failed:", err);
 });
 
 app.listen(3000, () => {

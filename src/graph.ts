@@ -189,3 +189,36 @@ function resolveAliasedImport(
 
     return null;
 }
+
+export function detectCycles(): Set<FilePath> {
+    const visited = new Set<FilePath>();
+    const inStack = new Set<FilePath>();
+    const cycleNodes = new Set<FilePath>();
+
+    function dfs(file: FilePath) {
+        visited.add(file);
+        inStack.add(file);
+
+        const node = graph.get(file);
+        if (!node) return;
+
+        for (const imp of node.imports) {
+            if (!visited.has(imp)) {
+                dfs(imp);
+            } else if (inStack.has(imp)) {
+                cycleNodes.add(imp);
+                cycleNodes.add(file);
+            }
+        }
+
+        inStack.delete(file);
+    }
+
+    for (const file of graph.keys()) {
+        if (!visited.has(file)) {
+            dfs(file);
+        }
+    }
+
+    return cycleNodes;
+}

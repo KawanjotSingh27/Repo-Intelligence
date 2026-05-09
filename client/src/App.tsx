@@ -3,6 +3,7 @@ import FileInput from "./components/FileInput";
 import Sidebar from "./components/Sidebar";
 import GraphView from "./components/GraphView";
 import { analyzeRepo, fetchGraph, analyzePR } from "./api";
+import History from "./components/History";
 
 type Summary = {
     direct: number;
@@ -73,6 +74,7 @@ export default function App() {
                     impactedFiles={Object.keys(combinedImpact)}
                     changedFiles={changedFiles}
                 />
+                <History/>
             </div>
         </div>
     );
