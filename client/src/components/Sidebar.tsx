@@ -8,6 +8,9 @@ type Summary = {
 type CriticalFile = {
     path: string;
     score: number;
+    valueExports: number;
+    typeExports: number;
+    isInCycle: boolean;
 };
 
 type Props = {
@@ -15,27 +18,71 @@ type Props = {
     criticalFiles: CriticalFile[];
 };
 
+function getRiskLevel(score: number): string {
+    if (score > 15) return "CRITICAL";
+    if (score > 8) return "HIGH";
+    if (score > 4) return "MEDIUM";
+    return "LOW";
+}
+
 export default function Sidebar({ summary, criticalFiles }: Props) {
-    if (!summary) return <div style={{ padding: "1rem" }}>No analysis yet.</div>;
+    if (!summary) return (
+        <div className="section">
+            <div className="empty">
+                <div className="empty-icon">⬡</div>
+                <p className="empty-text">No analysis yet</p>
+                <p className="empty-sub">Paste a PR URL to get started</p>
+            </div>
+        </div>
+    );
+
+    const risk = getRiskLevel(summary.score);
 
     return (
-        <div style={{ padding: "1rem", width: "300px", borderRight: "1px solid #ccc" }}>
-            <h3>Summary</h3>
-            <p>Direct dependents: {summary.direct}</p>
-            <p>Indirect dependents: {summary.indirect}</p>
-            <p>Max depth: {summary.maxDepth}</p>
-            <p>Score: {summary.score.toFixed(2)}</p>
-
-            <h3>Critical Files</h3>
-            {criticalFiles.length === 0
-                ? <p>None detected</p>
-                : criticalFiles.map(f => (
-                    <div key={f.path} style={{ color: "red", marginBottom: "0.5rem" }}>
-                        <p>{f.path.split("/").pop()}</p>
-                        <small>score: {f.score.toFixed(2)}</small>
+        <>
+            <div className="section">
+                <p className="section-title">Impact Summary</p>
+                <div className="stat-grid">
+                    <div className="stat-card">
+                        <div className="stat-value mono">{summary.direct}</div>
+                        <div className="stat-label">Direct</div>
                     </div>
-                ))
-            }
-        </div>
+                    <div className="stat-card">
+                        <div className="stat-value mono">{summary.indirect}</div>
+                        <div className="stat-label">Indirect</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-value mono">{summary.maxDepth}</div>
+                        <div className="stat-label">Max Depth</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-value mono">{summary.score.toFixed(1)}</div>
+                        <div className="stat-label">Score</div>
+                    </div>
+                    <div className="stat-score">
+                        <span className="stat-label">Risk Level</span>
+                        <span className={`risk-badge risk-${risk}`}>{risk}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="section">
+                <p className="section-title">Critical Files</p>
+                {criticalFiles.length === 0
+                    ? <p style={{ fontSize: 12, color: 'var(--muted)' }}>None detected</p>
+                    : criticalFiles.map(f => (
+                        <div key={f.path} className="critical-file">
+                            <span className="critical-file-name">
+                                {f.path.split("/").pop()}
+                            </span>
+                            <span className="critical-file-score">
+                                {f.score.toFixed(1)}
+                                {f.isInCycle && " ↻"}
+                            </span>
+                        </div>
+                    ))
+                }
+            </div>
+        </>
     );
 }

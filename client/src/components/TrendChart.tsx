@@ -34,47 +34,41 @@ export default function TrendChart({ repoUrl, criticalFiles }: Props) {
     };
 
     return (
-        <div style={{ padding: "1rem" }}>
-            <h3>Risk Score Trend</h3>
-
-            {criticalFiles.length === 0 && <p>No critical files yet.</p>}
-
-            {criticalFiles.length > 0 && (
-                <div>
+        <div className="section">
+            <p className="section-title">Risk Trend</p>
+            {criticalFiles.length === 0
+                ? <p style={{ fontSize: 12, color: 'var(--muted)' }}>No critical files yet</p>
+                : <>
                     <select
+                        className="trend-select"
                         value={selectedFile}
                         onChange={e => setSelectedFile(e.target.value)}
                     >
-                        <option value="">Select a critical file</option>
+                        <option value="">Select file</option>
                         {criticalFiles.map(f => (
                             <option key={f.path} value={f.path}>
                                 {f.path.split("/").pop()}
                             </option>
                         ))}
                     </select>
-                    <button onClick={handleFetch}>Show Trend</button>
-                </div>
-            )}
-
-            {data.length === 0 && selectedFile && <p>No trend data yet — run more analyses.</p>}
-
-            {data.length > 0 && (
-                <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={data}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="analyzed_at" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line
-                            type="monotone"
-                            dataKey="score"
-                            stroke="#ff4444"
-                            strokeWidth={2}
-                            dot={true}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            )}
+                    <button className="btn btn-secondary" onClick={handleFetch}>
+                        Show Trend
+                    </button>
+                    {data.length > 0 && (
+                        <ResponsiveContainer width="100%" height={150}>
+                            <LineChart data={data}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e1e30" />
+                                <XAxis dataKey="analyzed_at" tick={{ fontSize: 10, fill: '#6b6b8a', fontFamily: 'JetBrains Mono' }} />
+                                <YAxis tick={{ fontSize: 10, fill: '#6b6b8a', fontFamily: 'JetBrains Mono' }} />
+                                <Tooltip
+                                    contentStyle={{ background: '#13131f', border: '1px solid #1e1e30', borderRadius: 6, fontSize: 12 }}
+                                />
+                                <Line type="monotone" dataKey="score" stroke="#4d9eff" strokeWidth={2} dot={{ fill: '#4d9eff' }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    )}
+                </>
+            }
         </div>
     );
 }

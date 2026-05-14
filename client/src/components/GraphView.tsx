@@ -88,9 +88,9 @@ export default function GraphView({ graphData, criticalFiles, impactedFiles, cha
 
     return (
         <div style={{ width: "100%", height: "600px" }}>
-            <ReactFlow nodes={nodes} edges={edges} fitView>
-                <Background />
-                <Controls />
+            <ReactFlow nodes={nodes} edges={edges} fitView style={{ background: 'var(--bg)' }}>
+                <Background color="#1e1e30" gap={24} />
+                <Controls style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />
             </ReactFlow>
         </div>
     );

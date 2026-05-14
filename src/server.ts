@@ -6,6 +6,8 @@ import cors from "cors";
 import { cloneRepo, cleanupRepo, extractRepoUrl, getPRFiles } from "./github";
 import fs from "fs";
 import {pool, initDb, saveAnalysis, getAnalysisHistory } from "./db";
+import { generateReport } from "./report";
+import { scoreMap } from "./scorer";
 
 const app = express();
 app.use(cors());
@@ -35,7 +37,6 @@ app.post("/analyze", (req, res) => {
         criticalFiles: obj.criticalFiles,
         combinedImpact: Object.fromEntries(obj.combinedImpact)
     });
-    res.json(obj);
 });
 
 app.get("/graph", (req, res) => {
@@ -98,6 +99,13 @@ app.post("/analyze-pr", async (req, res) => {
         dir = clonedDir;
         const filesAbs = prFiles.map(f => path.resolve(dir!, f));
         const result = analyze(dir, filesAbs);
+        const scores = Array.from(scoreMap.entries()).map(([p, node]) => ({
+            file: p.split("/").pop(),
+            score: node.score
+        }));
+        console.log("All scores:", JSON.stringify(scores, null, 2));
+        console.log("Critical files:", result.criticalFiles);
+        console.log("Score map sample:", result.summary);
         const node = graph.get(filesAbs[0]);
         console.log("Graph node for first PR file:", node);
         console.log("Dependents:", node?.dependents);
@@ -111,6 +119,13 @@ app.post("/analyze-pr", async (req, res) => {
             result.criticalFiles,
             prFiles
         );
+        const report = generateReport({
+            repoUrl: extractRepoUrl(prUrl),
+            prUrl,
+            prFiles,
+            summary: result.summary,
+            criticalFiles: result.criticalFiles
+        });
         res.json({
             summary: result.summary,
             criticalFiles: result.criticalFiles,
@@ -124,7 +139,8 @@ app.post("/analyze-pr", async (req, res) => {
                         dependents: Array.from(node.dependents)
                     }
                 ])
-            )
+            ),
+            report
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to analyze PR" });

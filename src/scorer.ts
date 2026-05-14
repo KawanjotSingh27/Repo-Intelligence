@@ -39,19 +39,17 @@ function computeDepthWeightedScore(impact: Map<FilePath, number>): number {
     return score;
 }
 
-export function buildScore(files: FilePath[]): void {
+export function buildScore(files: FilePath[], relevantFiles?: Set<FilePath>): void {
     const cycleNodes = detectCycles();
+    const filesToScore = relevantFiles ? files.filter(f => relevantFiles.has(f)) : files;
 
-    for (const file of files) {
+    for (const file of filesToScore) {
         const impact = getAffectedFilesWithDepth(file);
         const depthScore = computeDepthWeightedScore(impact);
-
         const exportInfo = analyzeExports(file);
         const exportScore = (exportInfo.valueExports * 0.5) + (exportInfo.typeExports * 0.2);
-
         const isInCycle = cycleNodes.has(file);
         const cycleMultiplier = isInCycle ? 2 : 1;
-
         const finalScore = (depthScore + exportScore) * cycleMultiplier;
 
         scoreMap.set(file, {
@@ -73,18 +71,24 @@ function getAverageScore(): number {
 }
 
 export function getCriticalFiles(impact: Map<FilePath, number>): ScoreNode[] {
-    const avg = getAverageScore();
+    let total = 0;
+    let count = 0;
+    for (const file of impact.keys()) {
+        const node = scoreMap.get(file);
+        if (node) {
+            total += node.score;
+            count++;
+        }
+    }
+    const avg = count > 0 ? total / count : 0;
     const threshold = 2 * avg;
-    const critical: ScoreNode[] = [];
 
+    const critical: ScoreNode[] = [];
     for (const file of impact.keys()) {
         const node = scoreMap.get(file);
         if (!node) continue;
-        if (node.score > threshold) {
-            critical.push(node);
-        }
+        if (node.score > threshold) critical.push(node);
     }
-
     return critical;
 }
 

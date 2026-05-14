@@ -4,30 +4,40 @@ type Props = {
     records: AnalysisRecord[];
 };
 
+function getRiskLevel(score: number): string {
+    if (score > 15) return "CRITICAL";
+    if (score > 8) return "HIGH";
+    if (score > 4) return "MEDIUM";
+    return "LOW";
+}
+
 export default function History({ records }: Props) {
     return (
-        <div style={{ padding: "1rem", overflowY: "auto", maxHeight: "400px" }}>
-            <h3>Analysis History</h3>
-
-            {records.length === 0 && <p>No history yet — run a PR analysis first.</p>}
-
-            {records.map(record => (
-                <div key={record.id} style={{
-                    borderTop: "1px solid #ccc",
-                    marginTop: "1rem",
-                    paddingTop: "1rem"
-                }}>
-                    <p><strong>{new Date(record.analyzed_at).toLocaleString()}</strong></p>
-                    {record.pr_url && (
-                        <p>PR: <a href={record.pr_url} target="_blank" rel="noreferrer">
-                            {record.pr_url.split("/").pop()}
-                        </a></p>
-                    )}
-                    <p>Score: {record.score.toFixed(2)}</p>
-                    <p>Direct: {record.direct_dependents} | Indirect: {record.indirect_dependents} | Depth: {record.max_depth}</p>
-                    <p>Critical: {record.critical_files.map(f => f.path.split("/").pop()).join(", ") || "none"}</p>
-                </div>
-            ))}
+        <div className="section">
+            <p className="section-title">History</p>
+            {records.length === 0
+                ? <p style={{ fontSize: 12, color: 'var(--muted)' }}>No history yet</p>
+                : records.map(record => (
+                    <div key={record.id} className="history-item">
+                        <div className="history-time">
+                            {new Date(record.analyzed_at).toLocaleString()}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                            <span className="history-score mono">
+                                {record.score.toFixed(1)}
+                            </span>
+                            <span className={`risk-badge risk-${getRiskLevel(record.score)}`}>
+                                {getRiskLevel(record.score)}
+                            </span>
+                        </div>
+                        {record.critical_files.length > 0 && (
+                            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
+                                ⚠ {record.critical_files.map(f => f.path.split("/").pop()).join(", ")}
+                            </div>
+                        )}
+                    </div>
+                ))
+            }
         </div>
     );
 }

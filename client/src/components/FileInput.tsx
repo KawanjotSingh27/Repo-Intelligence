@@ -6,47 +6,71 @@ type Props = {
 };
 
 export default function FileInput({ onSubmit, onSubmitPR }: Props) {
+    const [mode, setMode] = useState<"manual" | "pr">("pr");
     const [dir, setDir] = useState("");
     const [files, setFiles] = useState("");
     const [prUrl, setPrUrl] = useState("");
-    const [mode, setMode] = useState<"manual" | "pr">("manual");
 
     const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (mode === "manual") {
-            const filesArray = files.split(",").map(f => f.trim());
-            onSubmit(dir, filesArray);
+            onSubmit(dir, files.split(",").map(f => f.trim()));
         } else {
             onSubmitPR(prUrl);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ padding: "1rem" }}>
-            <div style={{ marginBottom: "1rem" }}>
-                <button type="button" onClick={() => setMode("manual")}>Manual</button>
-                <button type="button" onClick={() => setMode("pr")}>PR URL</button>
+        <form onSubmit={handleSubmit}>
+            <div className="btn-tabs">
+                <button
+                    type="button"
+                    className={`btn btn-tab ${mode === "pr" ? "active" : ""}`}
+                    onClick={() => setMode("pr")}
+                >PR URL</button>
+                <button
+                    type="button"
+                    className={`btn btn-tab ${mode === "manual" ? "active" : ""}`}
+                    onClick={() => setMode("manual")}
+                >Manual</button>
             </div>
 
-            {mode === "manual" ? (
+            {mode === "pr" ? (
+                <div className="input-group">
+                    <label className="input-label">GitHub PR URL</label>
+                    <input
+                        className="input"
+                        value={prUrl}
+                        onChange={e => setPrUrl(e.target.value)}
+                        placeholder="https://github.com/owner/repo/pull/1"
+                    />
+                </div>
+            ) : (
                 <>
-                    <div>
-                        <label>Project directory</label>
-                        <input value={dir} onChange={e => setDir(e.target.value)} placeholder="./test" />
+                    <div className="input-group">
+                        <label className="input-label">Project directory</label>
+                        <input
+                            className="input"
+                            value={dir}
+                            onChange={e => setDir(e.target.value)}
+                            placeholder="./my-project"
+                        />
                     </div>
-                    <div>
-                        <label>Target files (comma separated)</label>
-                        <input value={files} onChange={e => setFiles(e.target.value)} placeholder="./test/utils/index.ts" />
+                    <div className="input-group">
+                        <label className="input-label">Target files (comma separated)</label>
+                        <input
+                            className="input"
+                            value={files}
+                            onChange={e => setFiles(e.target.value)}
+                            placeholder="./src/utils.ts, ./src/core.ts"
+                        />
                     </div>
                 </>
-            ) : (
-                <div>
-                    <label>GitHub PR URL</label>
-                    <input value={prUrl} onChange={e => setPrUrl(e.target.value)} placeholder="https://github.com/owner/repo/pull/123" />
-                </div>
             )}
 
-            <button type="submit">Analyze</button>
+            <button type="submit" className="btn btn-primary">
+                Analyze
+            </button>
         </form>
     );
 }

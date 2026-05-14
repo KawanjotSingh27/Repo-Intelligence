@@ -55,6 +55,7 @@ export default function App() {
     const [historyRecords, setHistoryRecords] = useState<AnalysisRecord[]>([]);
     const [repoUrl, setRepoUrl] = useState("");
     const [loading, setLoading] = useState(false);
+    const [report, setReport] = useState<string>("");
 
     const handleSubmit = async (dir: string, files: string[]) => {
         setLoading(true);
@@ -82,7 +83,6 @@ export default function App() {
                 analyzePR(prUrl),
                 fetchHistory(repo)
             ]);
-
             setSummary(analysis.summary);
             setCriticalFiles(analysis.criticalFiles);
             setGraphData(analysis.graph);
@@ -92,6 +92,7 @@ export default function App() {
             ));
             setRepoUrl(repo);
             setHistoryRecords(history);
+            setReport(analysis.report);
         } catch (err) {
             console.error("PR analysis failed:", err);
         } finally {
@@ -100,23 +101,43 @@ export default function App() {
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-            <h1 style={{ padding: "1rem" }}>RepoIntel</h1>
-            <FileInput onSubmit={handleSubmit} onSubmitPR={handleSubmitPR} />
-            {loading && <p style={{ padding: "1rem" }}>Analyzing...</p>}
-            <div style={{ display: "flex", flex: 1 }}>
+        <div className="app">
+            <header className="header">
+                <span className="header-logo">Repo<span>Intel</span></span>
+            </header>
+
+            <aside className="panel-left">
+                <div className="section">
+                    <FileInput onSubmit={handleSubmit} onSubmitPR={handleSubmitPR} />
+                </div>
+                {loading && (
+                    <div className="loading">
+                        <div className="loading-dot" />
+                        Analyzing...
+                    </div>
+                )}
                 <Sidebar summary={summary} criticalFiles={criticalFiles} />
+            </aside>
+
+            <main className="panel-center">
                 <GraphView
                     graphData={graphData}
                     criticalFiles={criticalFiles.map(f => f.path)}
                     impactedFiles={Object.keys(combinedImpact)}
                     changedFiles={changedFiles}
                 />
-                <div style={{ display: "flex", flexDirection: "column", width: "350px" }}>
-                    <History records={historyRecords} />
-                    <TrendChart repoUrl={repoUrl} criticalFiles={criticalFiles} />
-                </div>
-            </div>
+            </main>
+
+            <aside className="panel-right">
+                {report && (
+                    <div className="section">
+                        <p className="section-title">PR Report</p>
+                        <pre className="report-pre">{report}</pre>
+                    </div>
+                )}
+                <History records={historyRecords} />
+                <TrendChart repoUrl={repoUrl} criticalFiles={criticalFiles} />
+            </aside>
         </div>
     );
 }
