@@ -5,7 +5,7 @@ import { getAllFiles, buildGraph, graph } from "./graph";
 import cors from "cors";
 import { cloneRepo, cleanupRepo, extractRepoUrl, getPRFiles } from "./github";
 import fs from "fs";
-import { initDb, saveAnalysis, getAnalysisHistory } from "./db";
+import {pool, initDb, saveAnalysis, getAnalysisHistory } from "./db";
 
 const app = express();
 app.use(cors());
@@ -106,6 +106,7 @@ app.post("/analyze-pr", async (req, res) => {
         await saveAnalysis(
             extractRepoUrl(prUrl),
             prUrl,
+            dir!,
             result.summary,
             result.criticalFiles,
             prFiles
@@ -129,6 +130,27 @@ app.post("/analyze-pr", async (req, res) => {
         res.status(500).json({ error: "Failed to analyze PR" });
     } finally {
         if (dir) cleanupRepo(dir);
+    }
+});
+
+app.get("/file-history", async (req, res) => {
+    const { repoUrl, filePath } = req.query;
+    if (!repoUrl || !filePath) {
+        res.status(400).json({ error: "repoUrl and filePath are required" });
+        return;
+    }
+    try {
+        const result = await pool.query(
+            `SELECT analyzed_at, score, critical_files
+             FROM analyses
+             WHERE repo_url = $1
+             AND critical_files::text LIKE $2
+             ORDER BY analyzed_at ASC`,
+            [repoUrl, `%${(filePath as string).split("/").pop()}%`]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch file history" });
     }
 });
 

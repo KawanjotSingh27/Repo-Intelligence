@@ -21,3 +21,10 @@ export async function fetchHistory(repoUrl: string) {
     const res = await axios.get(`${BASE}/history`, { params: { repoUrl } });
     return res.data;
 }
+
+export async function fetchFileHistory(repoUrl: string, filePath: string) {
+    const res = await axios.get(`${BASE}/file-history`, { 
+        params: { repoUrl, filePath } 
+    });
+    return res.data;
+}

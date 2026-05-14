@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import type { ScoreNode } from "./scorer";
 
 export const pool = new Pool({
     host: "localhost",
@@ -28,10 +29,16 @@ export async function initDb(): Promise<void> {
 export async function saveAnalysis(
     repoUrl: string,
     prUrl: string | null,
+    dir: string,
     summary: { direct: number; indirect: number; maxDepth: number; score: number },
-    criticalFiles: any[],
+    criticalFiles: ScoreNode[],
     prFiles: string[]
 ): Promise<void> {
+    const normalizedCritical = criticalFiles.map(f => ({
+        ...f,
+        path: f.path.replace(dir, "").replace(/^\//, "")
+    }));
+
     await pool.query(
         `INSERT INTO analyses 
         (repo_url, pr_url, direct_dependents, indirect_dependents, max_depth, score, critical_files, pr_files)
@@ -43,7 +50,7 @@ export async function saveAnalysis(
             summary.indirect,
             summary.maxDepth,
             summary.score,
-            JSON.stringify(criticalFiles),
+            JSON.stringify(normalizedCritical),
             JSON.stringify(prFiles)
         ]
     );
