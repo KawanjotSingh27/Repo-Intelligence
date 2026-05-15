@@ -61,7 +61,8 @@ export async function saveAnalysis(
     dir: string,
     summary: { direct: number; indirect: number; maxDepth: number; score: number },
     criticalFiles: ScoreNode[],
-    prFiles: string[]
+    prFiles: string[],
+    userId?: number
 ): Promise<void> {
     const normalizedCritical = criticalFiles.map(f => ({
         ...f,
@@ -70,9 +71,10 @@ export async function saveAnalysis(
 
     await pool.query(
         `INSERT INTO analyses 
-        (repo_url, pr_url, direct_dependents, indirect_dependents, max_depth, score, critical_files, pr_files)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        (user_id, repo_url, pr_url, direct_dependents, indirect_dependents, max_depth, score, critical_files, pr_files)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
+            userId ?? null,
             repoUrl,
             prUrl,
             summary.direct,

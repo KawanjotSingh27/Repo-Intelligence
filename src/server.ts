@@ -16,6 +16,19 @@ import { getUserById } from "./db";
 const app = express();
 app.use(cors());
 app.use(express.json());
+export function authMiddleware(req: any, res: any, next: any) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        req.userId = null;
+        return next();
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const payload = verifyJWT(token);
+    req.userId = payload?.userId ?? null;
+    next();
+}
+
+app.use(authMiddleware);
 
 app.get("/auth/github", (req, res) => {
     res.redirect(getGithubAuthUrl());
@@ -50,6 +63,18 @@ app.get("/auth/me", async (req, res) => {
     }
     const user = await getUserById(payload.userId);
     res.json(user);
+});
+
+app.get("/user-analyses", async (req: any, res) => {
+    if (!req.userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+    const result = await pool.query(
+        `SELECT * FROM analyses WHERE user_id = $1 ORDER BY analyzed_at DESC LIMIT 20`,
+        [req.userId]
+    );
+    res.json(result.rows);
 });
 
 app.get("/history", async (req, res) => {
@@ -123,7 +148,7 @@ app.post("/analyze-repo", async (req, res) => {
     }
 });
 
-app.post("/analyze-pr", async (req, res) => {
+app.post("/analyze-pr", async (req:any, res) => {
     const { prUrl } = req.body;
     if (!prUrl) {
         res.status(400).json({ error: "prUrl is required" });
@@ -142,21 +167,15 @@ app.post("/analyze-pr", async (req, res) => {
             file: p.split("/").pop(),
             score: node.score
         }));
-        console.log("All scores:", JSON.stringify(scores, null, 2));
-        console.log("Critical files:", result.criticalFiles);
-        console.log("Score map sample:", result.summary);
         const node = graph.get(filesAbs[0]);
-        console.log("Graph node for first PR file:", node);
-        console.log("Dependents:", node?.dependents);
-        console.log("PR files:", filesAbs);
-        console.log("File exists:", filesAbs.map(f => fs.existsSync(f)));
         await saveAnalysis(
             extractRepoUrl(prUrl),
             prUrl,
             dir!,
             result.summary,
             result.criticalFiles,
-            prFiles
+            prFiles,
+            req.userId
         );
         const report = generateReport({
             repoUrl: extractRepoUrl(prUrl),
