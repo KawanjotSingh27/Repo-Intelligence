@@ -11,8 +11,20 @@ export const pool = new Pool({
 
 export async function initDb(): Promise<void> {
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            github_id INTEGER UNIQUE NOT NULL,
+            username TEXT NOT NULL,
+            avatar_url TEXT,
+            access_token TEXT,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS analyses (
             id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
             repo_url TEXT NOT NULL,
             pr_url TEXT,
             analyzed_at TIMESTAMP DEFAULT NOW(),
@@ -24,6 +36,23 @@ export async function initDb(): Promise<void> {
             pr_files JSONB
         )
     `);
+}
+
+export async function upsertUser(githubId: number, username: string, avatarUrl: string, accessToken: string) {
+    const result = await pool.query(
+        `INSERT INTO users (github_id, username, avatar_url, access_token)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (github_id) DO UPDATE
+         SET username = $2, avatar_url = $3, access_token = $4
+         RETURNING *`,
+        [githubId, username, avatarUrl, accessToken]
+    );
+    return result.rows[0];
+}
+
+export async function getUserById(id: number) {
+    const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [id]);
+    return result.rows[0] ?? null;
 }
 
 export async function saveAnalysis(

@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import path from "path";
 import { analyze } from "./analyzer";
@@ -8,10 +10,47 @@ import fs from "fs";
 import {pool, initDb, saveAnalysis, getAnalysisHistory } from "./db";
 import { generateReport } from "./report";
 import { scoreMap } from "./scorer";
+import { getGithubAuthUrl, handleOAuthCallback, verifyJWT } from "./auth";
+import { getUserById } from "./db";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.get("/auth/github", (req, res) => {
+    res.redirect(getGithubAuthUrl());
+});
+
+app.get("/auth/callback", async (req, res) => {
+    const code = req.query.code as string;
+    if (!code) {
+        res.status(400).json({ error: "No code provided" });
+        return;
+    }
+    try {
+        const { token, user } = await handleOAuthCallback(code);
+        // redirect to frontend with token in query param
+        res.redirect(`http://localhost:5173/auth?token=${token}&username=${user.username}&avatar=${user.avatar_url}`);
+    } catch (err) {
+        res.status(500).json({ error: "Auth failed" });
+    }
+});
+
+app.get("/auth/me", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        res.status(401).json({ error: "No token" });
+        return;
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const payload = verifyJWT(token);
+    if (!payload) {
+        res.status(401).json({ error: "Invalid token" });
+        return;
+    }
+    const user = await getUserById(payload.userId);
+    res.json(user);
+});
 
 app.get("/history", async (req, res) => {
     const { repoUrl } = req.query;
