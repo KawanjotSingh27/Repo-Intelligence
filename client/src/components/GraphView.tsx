@@ -57,12 +57,12 @@ function buildNodesAndEdges(graphData: GraphData, criticalFiles: string[], impac
         position: { x: 0, y: 0 },
         data: { label: filePath.split("/").pop() },
         style: changedFiles.includes(filePath)
-            ? { background: "#4499ff", color: "white", border: "none" }
-            : criticalFiles.includes(filePath)
-            ? { background: "#ff4444", color: "white", border: "none" }
-            : impactedFiles.includes(filePath)
-            ? { background: "#ffaa00", color: "white", border: "none" }
-            : {}
+        ? { background: '#4d9eff', color: 'white', border: 'none', borderRadius: 6 }
+        : criticalFiles.includes(filePath)
+        ? { background: '#ff4455', color: 'white', border: 'none', borderRadius: 6 }
+        : impactedFiles.includes(filePath)
+        ? { background: '#ff9500', color: 'white', border: 'none', borderRadius: 6 }
+        : { background: '#1a1a2e', color: '#e2e2f0', border: '1px solid #1e1e30', borderRadius: 6 }
     }));
 
     const edges: Edge[] = [];
@@ -89,7 +89,7 @@ export default function GraphView({ graphData, criticalFiles, impactedFiles, cha
     return (
         <div style={{ width: "100%", height: "600px" }}>
             <ReactFlow nodes={nodes} edges={edges} fitView style={{ background: 'var(--bg)' }}>
-                <Background color="#1e1e30" gap={24} />
+                <Background color="#1e1e30" gap={16} />
                 <Controls style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />
             </ReactFlow>
         </div>
