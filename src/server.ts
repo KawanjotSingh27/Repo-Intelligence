@@ -255,6 +255,53 @@ app.get("/file-history", async (req, res) => {
     }
 });
 
+app.post("/repo-files", async (req, res) => {
+    const { repoUrl } = req.body;
+    if (!repoUrl) {
+        res.status(400).json({ error: "repoUrl is required" });
+        return;
+    }
+    let dir: string | null = null;
+    try {
+        dir = await cloneRepo(repoUrl);
+        const files = getAllFiles(dir);
+        const relativePaths = files.map(f => f.replace(dir! + "/", ""));
+        res.json({ files: relativePaths, clonedDir: dir });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch repo files" });
+    }
+});
+
+app.post("/analyze-local", async (req: any, res) => {
+    const { clonedDir, files } = req.body;
+    if (!clonedDir || !files) {
+        res.status(400).json({ error: "clonedDir and files are required" });
+        return;
+    }
+    try {
+        const filesAbs = files.map((f: string) => path.join(clonedDir, f));
+        const result = analyze(clonedDir, filesAbs);
+        res.json({
+            summary: result.summary,
+            criticalFiles: result.criticalFiles,
+            combinedImpact: Object.fromEntries(result.combinedImpact),
+            graph: Object.fromEntries(
+                Array.from(graph.entries()).map(([file, node]) => [
+                    file,
+                    {
+                        imports: Array.from(node.imports),
+                        dependents: Array.from(node.dependents)
+                    }
+                ])
+            )
+        });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to analyze" });
+    } finally {
+        cleanupRepo(clonedDir);
+    }
+});
+
 initDb().then(() => {
     console.log("Database initialized");
 }).catch(err => {

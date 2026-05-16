@@ -41,3 +41,13 @@ export async function fetchAnalysis(id: number) {
     const res = await axios.get(`${BASE}/analyses/${id}`, { headers: getHeaders() });
     return res.data;
 }
+
+export async function fetchRepoFiles(repoUrl: string) {
+    const res = await axios.post(`${BASE}/repo-files`, { repoUrl }, { headers: getHeaders() });
+    return res.data;
+}
+
+export async function analyzeLocal(clonedDir: string, files: string[]) {
+    const res = await axios.post(`${BASE}/analyze-local`, { clonedDir, files }, { headers: getHeaders() });
+    return res.data;
+}

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef} from "react";
 import FileInput from "./components/FileInput";
 import Sidebar from "./components/Sidebar";
 import GraphView from "./components/GraphView";
-import { analyzeRepo, fetchGraph, analyzePR, fetchHistory } from "./api";
+import { analyzeLocal, analyzePR, fetchHistory } from "./api";
 import History from "./components/History";
 import TrendChart from "./components/TrendChart";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -66,16 +66,13 @@ export default function App() {
     const navigate = useNavigate();
     const location=useLocation();
 
-    const handleSubmit = async (dir: string, files: string[]) => {
+    const handleSubmit = async (clonedDir: string, files: string[]) => {
         setLoading(true);
         try {
-            const [analysis, graph] = await Promise.all([
-                analyzeRepo(dir, files),
-                fetchGraph(dir)
-            ]);
+            const analysis = await analyzeLocal(clonedDir, files);
             setSummary(analysis.summary);
             setCriticalFiles(analysis.criticalFiles);
-            setGraphData(graph);
+            setGraphData(analysis.graph);
             setCombinedImpact(analysis.combinedImpact);
         } catch (err) {
             console.error("Analysis failed:", err);
