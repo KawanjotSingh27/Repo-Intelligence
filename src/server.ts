@@ -207,6 +207,26 @@ app.post("/analyze-pr", async (req:any, res) => {
     }
 });
 
+app.get("/analyses/:id", async (req: any, res) => {
+    if (!req.userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+    try {
+        const result = await pool.query(
+            `SELECT * FROM analyses WHERE id = $1 AND user_id = $2`,
+            [req.params.id, req.userId]
+        );
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: "Not found" });
+            return;
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch analysis" });
+    }
+});
+
 app.get("/file-history", async (req, res) => {
     const { repoUrl, filePath } = req.query;
     if (!repoUrl || !filePath) {

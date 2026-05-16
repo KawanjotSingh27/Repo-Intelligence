@@ -36,3 +36,8 @@ export async function fetchUserAnalyses() {
     const res = await axios.get(`${BASE}/user-analyses`, { headers: getHeaders() });
     return res.data;
 }
+
+export async function fetchAnalysis(id: number) {
+    const res = await axios.get(`${BASE}/analyses/${id}`, { headers: getHeaders() });
+    return res.data;
+}

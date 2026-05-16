@@ -23,7 +23,7 @@ export default function Dashboard() {
     return (
         <div className="dashboard">
             <nav className="landing-nav">
-                <span className="header-logo">Repo<span>Intel</span></span>
+                <span className="header-logo" onClick={()=>navigate("/dashboard")} style={{cursor:"pointer"}}>Repo<span>Intel</span></span>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                     <img
                         src={user?.avatar_url}
@@ -71,7 +71,7 @@ export default function Dashboard() {
                             </div>
                         ) : (
                             recentAnalyses.map(record => (
-                                <div key={record.id} className="history-item">
+                                <div key={record.id} className="history-item" onClick={()=>navigate("/analyze", {state:{record:record,mode:"view"}})} style={{cursor:"pointer"}}>
                                     <div className="history-time">
                                         {new Date(record.analyzed_at).toLocaleString()}
                                     </div>

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState, useRef} from "react";
 import FileInput from "./components/FileInput";
 import Sidebar from "./components/Sidebar";
 import GraphView from "./components/GraphView";
 import { analyzeRepo, fetchGraph, analyzePR, fetchHistory } from "./api";
 import History from "./components/History";
 import TrendChart from "./components/TrendChart";
+import { useNavigate, useLocation } from "react-router-dom";
 
 type Summary = {
     direct: number;
@@ -38,6 +39,7 @@ export type AnalysisRecord = {
     max_depth: number;
     score: number;
     critical_files: CriticalFile[];
+    pr_files: string[];
 };
 
 function extractRepoUrlFromPR(prUrl: string): string {
@@ -56,6 +58,13 @@ export default function App() {
     const [repoUrl, setRepoUrl] = useState("");
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState<string>("");
+    const [viewingRecord, setViewingRecord] = useState<AnalysisRecord | null>(null);
+
+
+    const hasAutoRun = useRef(false);
+
+    const navigate = useNavigate();
+    const location=useLocation();
 
     const handleSubmit = async (dir: string, files: string[]) => {
         setLoading(true);
@@ -100,16 +109,59 @@ export default function App() {
         }
     };
 
+    useEffect(() => {
+        const state = location.state as { 
+            prUrl?: string;
+            record?: AnalysisRecord;
+            mode?: "view" | "reanalyze"
+        } | null;
+
+        if (!state || hasAutoRun.current) return;
+        hasAutoRun.current = true;
+
+        if (state.mode === "view" && state.record) {
+            setViewingRecord(state.record);
+            const record = state.record;
+            setSummary({
+                direct: record.direct_dependents,
+                indirect: record.indirect_dependents,
+                maxDepth: record.max_depth,
+                score: record.score
+            });
+            setCriticalFiles(record.critical_files);
+            setReport("");
+        } else if (state.prUrl) {
+            handleSubmitPR(state.prUrl);
+        }
+    }, []);
+
     return (
         <div className="app">
             <header className="header">
-                <span className="header-logo">Repo<span>Intel</span></span>
+                <span className="header-logo" onClick={()=>navigate("/dashboard")} style={{cursor:"pointer"}}>Repo<span>Intel</span></span>
             </header>
 
             <aside className="panel-left">
                 <div className="section">
                     <FileInput onSubmit={handleSubmit} onSubmitPR={handleSubmitPR} />
                 </div>
+                {viewingRecord?.pr_url && (
+                    <div className="section">
+                        <p className="section-title">Viewing saved result</p>
+                        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: '0.75rem' }}>
+                            {new Date(viewingRecord.analyzed_at).toLocaleString()}
+                        </p>
+                        <button 
+                            className="btn btn-primary"
+                            onClick={() => {
+                                setViewingRecord(null);
+                                handleSubmitPR(viewingRecord.pr_url!);
+                            }}
+                        >
+                            Re-analyze →
+                        </button>
+                    </div>
+                )}
                 {loading && (
                     <div className="loading">
                         <div className="loading-dot" />
