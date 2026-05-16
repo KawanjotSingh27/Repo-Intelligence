@@ -12,7 +12,7 @@ export default function Landing() {
         <div className="landing">
             <nav className="landing-nav">
                 <span className="header-logo">Repo<span>Intel</span></span>
-                <a href="https://repointel-api.onrender.com/auth/callback" className="btn btn-primary landing-btn">
+                <a href={`${import.meta.env.VITE_API_URL}/auth/github`} className="btn btn-primary landing-btn">
                     Login with GitHub
                 </a>
             </nav>
@@ -25,7 +25,7 @@ export default function Landing() {
                 <p className="landing-sub">
                     RepoIntel analyzes your pull requests and maps the dependency impact of every change — so your team reviews with context, not guesswork.
                 </p>
-                <a href="https://repointel-api.onrender.com/auth/callback" className="btn btn-primary landing-cta">
+                <a href={`${import.meta.env.VITE_API_URL}/auth/github`} className="btn btn-primary landing-cta">
                     Analyze your first PR →
                 </a>
             </div>
