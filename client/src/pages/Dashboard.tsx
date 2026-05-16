@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {useEffect,useState } from "react";
 import { useAuth } from "../useAuth";
+import { useNavigate } from "react-router-dom";
 import { fetchUserAnalyses } from "../api";
 import type { AnalysisRecord } from "../App";
 
@@ -10,12 +10,8 @@ export default function Dashboard() {
     const [recentAnalyses, setRecentAnalyses] = useState<AnalysisRecord[]>([]);
 
     useEffect(() => {
-        if (!user) {
-            navigate("/");
-            return;
-        }
         fetchUserAnalyses().then(setRecentAnalyses).catch(console.error);
-    }, [user]);
+    },[]);
 
     function getRiskLevel(score: number): string {
         if (score > 15) return "CRITICAL";
