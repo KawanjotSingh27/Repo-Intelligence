@@ -2,11 +2,10 @@ import { Pool } from "pg";
 import type { ScoreNode } from "./scorer";
 
 export const pool = new Pool({
-    host: "localhost",
-    port: 5432,
-    database: "repointel",
-    user: "repointel_user",
-    password: "password123"
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === "production" 
+        ? { rejectUnauthorized: false } 
+        : false
 });
 
 export async function initDb(): Promise<void> {

@@ -14,8 +14,15 @@ import { getGithubAuthUrl, handleOAuthCallback, verifyJWT } from "./auth";
 import { getUserById } from "./db";
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        process.env.FRONTEND_URL ?? ""
+    ],
+    credentials: true
+}));
 app.use(express.json());
+
 export function authMiddleware(req: any, res: any, next: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -42,8 +49,8 @@ app.get("/auth/callback", async (req, res) => {
     }
     try {
         const { token, user } = await handleOAuthCallback(code);
-        // redirect to frontend with token in query param
-        res.redirect(`http://localhost:5173/auth?token=${token}&username=${user.username}&avatar=${user.avatar_url}`);
+        const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+        res.redirect(`${frontendUrl}/auth?token=${token}&username=${user.username}&avatar=${user.avatar_url}`);
     } catch (err) {
         res.status(500).json({ error: "Auth failed" });
     }
