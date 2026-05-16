@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { fetchRepoFiles } from "../api";
+import { useState, useEffect } from "react";
+import { fetchRepoFiles, cleanupClonedRepo } from "../api";
 
 type Props = {
     onSubmit: (clonedDir: string, files: string[]) => void;
@@ -50,6 +50,12 @@ export default function FileInput({ onSubmit, onSubmitPR, initialPrUrl = "" }: P
     const filteredFiles = repoFiles.filter(f =>
         f.toLowerCase().includes(search.toLowerCase())
     );
+
+    useEffect(() => {
+        return () => {
+            if (clonedDir) cleanupClonedRepo(clonedDir);
+        };
+    }, [clonedDir]);
 
     return (
         <form onSubmit={handleSubmit}>

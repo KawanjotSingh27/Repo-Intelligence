@@ -51,3 +51,7 @@ export async function analyzeLocal(clonedDir: string, files: string[]) {
     const res = await axios.post(`${BASE}/analyze-local`, { clonedDir, files }, { headers: getHeaders() });
     return res.data;
 }
+
+export async function cleanupClonedRepo(clonedDir: string) {
+    await axios.post(`${BASE}/cleanup`, { clonedDir }, { headers: getHeaders() });
+}

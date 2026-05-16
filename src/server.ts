@@ -297,9 +297,13 @@ app.post("/analyze-local", async (req: any, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to analyze" });
-    } finally {
-        cleanupRepo(clonedDir);
     }
+});
+
+app.post("/cleanup", (req, res) => {
+    const { clonedDir } = req.body;
+    if (clonedDir) cleanupRepo(clonedDir);
+    res.json({ ok: true });
 });
 
 initDb().then(() => {
