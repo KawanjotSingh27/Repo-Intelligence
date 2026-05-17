@@ -47,9 +47,10 @@ export default function Dashboard() {
                     </div>
                     <div style={{ display: "flex", gap: "1rem" }}>
                         <a    href="https://github.com/apps/repointelapp/installations/new"
-                            className="btn btn-tab"
+                            className="btn btn-primary landing-btn"
                             target="_blank"
                             rel="noreferrer"
+                            style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none" }}
                         >
                             Install GitHub App
                         </a>
