@@ -25,9 +25,20 @@ export default function Landing() {
                 <p className="landing-sub">
                     RepoIntel analyzes your pull requests and maps the dependency impact of every change — so your team reviews with context, not guesswork.
                 </p>
-                <a href={`${import.meta.env.VITE_API_URL}/auth/github`} className="btn btn-primary landing-cta">
-                    Analyze your first PR →
-                </a>
+                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+                    <a href={`${import.meta.env.VITE_API_URL}/auth/github`} className="btn btn-primary landing-cta">
+                        Analyze your first PR →
+                    </a>
+                    <a 
+                        href="https://github.com/apps/repointelapp/installations/new"
+                        className="btn landing-cta"
+                        style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Install GitHub App →
+                    </a>
+                </div>
             </div>
 
             <div className="landing-features">
