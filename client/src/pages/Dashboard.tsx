@@ -45,12 +45,21 @@ export default function Dashboard() {
                             Analyze a PR or view your recent analyses below
                         </p>
                     </div>
-                    <button
-                        className="btn btn-primary landing-btn"
-                        onClick={() => navigate("/analyze")}
-                    >
-                        New Analysis →
-                    </button>
+                    <div style={{ display: "flex", gap: "1rem" }}>
+                        <a    href="https://github.com/apps/repointelapp/installations/new"
+                            className="btn btn-tab"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Install GitHub App
+                        </a>
+                        <button
+                            className="btn btn-primary landing-btn"
+                            onClick={() => navigate("/analyze")}
+                        >
+                            New Analysis →
+                        </button>
+                    </div>
                 </div>
 
                 <div className="dashboard-grid">
