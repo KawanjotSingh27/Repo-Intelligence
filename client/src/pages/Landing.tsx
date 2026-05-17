@@ -31,8 +31,8 @@ export default function Landing() {
                     </a>
                     <a 
                         href="https://github.com/apps/repointelapp/installations/new"
-                        className="btn landing-cta"
-                        style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+                        className="btn btn-primary landing-btn"
+                        style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)",textDecoration: "none" }}
                         target="_blank"
                         rel="noreferrer"
                     >
