@@ -12,6 +12,7 @@ import { generateReport } from "./report";
 import { scoreMap } from "./scorer";
 import { getGithubAuthUrl, handleOAuthCallback, verifyJWT } from "./auth";
 import { getUserById } from "./db";
+import { webhooks } from "./webhook";
 
 const app = express();
 app.use(cors({
@@ -297,6 +298,25 @@ app.post("/analyze-local", async (req: any, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: "Failed to analyze" });
+    }
+});
+
+app.post("/webhook", async (req, res) => {
+    const signature = req.headers["x-hub-signature-256"] as string;
+    const id = req.headers["x-github-delivery"] as string;
+    const name = req.headers["x-github-event"] as string;
+
+    try {
+        await webhooks.verifyAndReceive({
+            id,
+            name: name as any,
+            signature,
+            payload: JSON.stringify(req.body)
+        });
+        res.status(200).json({ ok: true });
+    } catch (err) {
+        console.error("Webhook error:", err);
+        res.status(400).json({ error: "Invalid webhook" });
     }
 });
 
