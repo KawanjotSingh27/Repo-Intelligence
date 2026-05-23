@@ -1,4 +1,4 @@
-import { getAllFiles, buildGraph, resetGraph, loadPathAliases, graph, getAffectedFilesWithDepth } from "./graph";
+import { getAllFiles, buildGraph, resetGraph, loadPathAliases, findAllTsConfigs, graph, getAffectedFilesWithDepth } from "./graph";
 import { buildScore, getCombinedImpact, getCriticalFiles, summarizeImpact, resetScores } from "./scorer";
 
 export type AnalysisResult = {
@@ -12,7 +12,8 @@ export function analyze(dir: string, targetFiles: string[]): AnalysisResult {
     resetScores();
     const files = getAllFiles(dir);
     const aliases = loadPathAliases(dir);
-    buildGraph(files, aliases);
+    const allConfigs = findAllTsConfigs(dir);
+    buildGraph(files, aliases, allConfigs);
 
     const relevantFiles = new Set<string>();
     for (const target of targetFiles) {

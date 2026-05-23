@@ -14,16 +14,18 @@ type PathAliases = {
 export const graph = new Map<FilePath, FileNode>();
 
 function extractImports(code: string): string[] {
-    const imports: string[] = [];
+    const noLineComments = code.replace(/\/\/.*$/gm, "");
+    const noComments = noLineComments.replace(/\/\*[\s\S]*?\*\//g, "");
     
+    const imports: string[] = [];
     const importRegex = /import\s+(?:.*?\s+from\s+)?["'](.+?)["']/g;
     const exportRegex = /export\s+(?:.*?\s+from\s+|(?:\*|\{[^}]*\})\s+from\s+)["'](.+?)["']/g;
     
     let match;
-    while (match = importRegex.exec(code)) {
+    while (match = importRegex.exec(noComments)) {
         if (match[1]) imports.push(match[1]);
     }
-    while (match = exportRegex.exec(code)) {
+    while (match = exportRegex.exec(noComments)) {
         if (match[2]) imports.push(match[2]);
     }
     
@@ -84,7 +86,7 @@ function resolveImportPath(fromFile: string, importPath: string): FilePath | nul
     return null;
 }
 
-export function buildGraph(files: FilePath[], aliases: PathAliases = {}): void {
+export function buildGraph(files: FilePath[], aliases: PathAliases = {}, allConfigs: string[] = []): void {
     for (const file of files) {
         graph.set(file, {
             path: file,
@@ -92,9 +94,15 @@ export function buildGraph(files: FilePath[], aliases: PathAliases = {}): void {
             dependents: new Set()
         });
     }
+
     for (const file of files) {
         const data = fs.readFileSync(file, "utf-8");
         const imports = extractImports(data);
+
+        const nearestConfig = findNearestTsConfig(file, allConfigs);
+        const fileAliases = nearestConfig
+            ? loadAliasesFromConfig(nearestConfig)
+            : aliases;
 
         for (const imp of imports) {
             let resolved: string | null = null;
@@ -102,7 +110,7 @@ export function buildGraph(files: FilePath[], aliases: PathAliases = {}): void {
             if (imp.startsWith(".")) {
                 resolved = resolveImportPath(file, imp);
             } else {
-                resolved = resolveAliasedImport(imp, aliases, "");
+                resolved = resolveAliasedImport(imp, fileAliases, fileAliases.__baseUrl?.[0] ?? "");
             }
 
             if (!resolved) continue;
@@ -228,4 +236,56 @@ export function detectCycles(): Set<FilePath> {
     }
 
     return cycleNodes;
+}
+
+export function findAllTsConfigs(dir: string): string[] {
+    const configs: string[] = [];
+    
+    function walk(currentDir: string) {
+        const items = fs.readdirSync(currentDir);
+        for (const item of items) {
+            if (item === 'node_modules' || item === '.git' || item === 'dist') continue;
+            const fullPath = path.join(currentDir, item);
+            const stat = fs.statSync(fullPath);
+            if (stat.isDirectory()) {
+                walk(fullPath);
+            } else if (item === 'tsconfig.json') {
+                configs.push(fullPath);
+            }
+        }
+    }
+    
+    walk(dir);
+    return configs;
+}
+
+function findNearestTsConfig(filePath: string, allConfigs: string[]): string | null {
+    let dir = path.dirname(filePath);
+    
+    while (dir !== path.dirname(dir)) {
+        const match = allConfigs.find(c => path.dirname(c) === dir);
+        if (match) return match;
+        dir = path.dirname(dir);
+    }
+    
+    return null;
+}
+
+function loadAliasesFromConfig(tsconfigPath: string): PathAliases {
+    try {
+        const raw = fs.readFileSync(tsconfigPath, "utf-8");
+        const tsconfig = JSON.parse(raw);
+        const paths = tsconfig?.compilerOptions?.paths;
+        const baseUrl = tsconfig?.compilerOptions?.baseUrl ?? ".";
+        const configDir = path.dirname(tsconfigPath);
+
+        if (!paths) return {};
+
+        return {
+            __baseUrl: [path.resolve(configDir, baseUrl)],
+            ...paths
+        };
+    } catch {
+        return {};
+    }
 }
