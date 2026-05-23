@@ -9,3 +9,5 @@ export function getUtilUpper(input: string): string {
 export function getUtilLength(input: string): number {
     return input.trim().length;
 }
+
+export * from "./format"

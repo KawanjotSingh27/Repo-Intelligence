@@ -13,13 +13,20 @@ type PathAliases = {
 
 export const graph = new Map<FilePath, FileNode>();
 
-function extractImports(code:string):string[]{
+function extractImports(code: string): string[] {
+    const imports: string[] = [];
+    
     const importRegex = /import\s+(?:.*?\s+from\s+)?["'](.+?)["']/g;
-    const imports:string[]=[];
+    const exportRegex = /export\s+(?:.*?\s+from\s+|(?:\*|\{[^}]*\})\s+from\s+)["'](.+?)["']/g;
+    
     let match;
-    while(match=importRegex.exec(code)){
+    while (match = importRegex.exec(code)) {
         imports.push(match[1]);
     }
+    while (match = exportRegex.exec(code)) {
+        imports.push(match[2]);
+    }
+    
     return imports;
 }
 
