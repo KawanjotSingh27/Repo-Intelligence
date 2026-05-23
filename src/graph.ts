@@ -21,13 +21,13 @@ function extractImports(code: string): string[] {
     
     let match;
     while (match = importRegex.exec(code)) {
-        imports.push(match[1]);
+        if (match[1]) imports.push(match[1]);
     }
     while (match = exportRegex.exec(code)) {
-        imports.push(match[2]);
+        if (match[2]) imports.push(match[2]);
     }
     
-    return imports;
+    return imports.filter(Boolean);
 }
 
 export function getAllFiles(dir: string): FilePath[] {
