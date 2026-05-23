@@ -26,7 +26,7 @@ function extractImports(code: string): string[] {
         if (match[1]) imports.push(match[1]);
     }
     while (match = exportRegex.exec(noComments)) {
-        if (match[2]) imports.push(match[2]);
+        if (match[1]) imports.push(match[1]);
     }
     
     return imports.filter(Boolean);
@@ -59,7 +59,9 @@ export function getAllFiles(dir: string): FilePath[] {
 
 function resolveImportPath(fromFile: string, importPath: string): FilePath | null {
     const dir = path.dirname(fromFile);
-    const basePath = path.resolve(dir, importPath);
+    
+    const strippedPath = importPath.replace(/\.js$/, "");
+    const basePath = path.resolve(dir, strippedPath);
 
     const extensions = [".ts", ".tsx"];
 
