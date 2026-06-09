@@ -30,7 +30,7 @@ export function analyze(dir: string, targetFiles: string[]): AnalysisResult {
         }
     }
 
-    buildScore(files, relevantFiles);
+    buildScore(files, relevantFiles, dir);
     const combImpact = getCombinedImpact(targetFiles);
     const summ = summarizeImpact(combImpact);
     const critFiles = getCriticalFiles(combImpact);

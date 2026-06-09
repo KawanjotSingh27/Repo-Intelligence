@@ -1,10 +1,13 @@
 import { graph, getAffectedFilesWithDepth, detectCycles } from "./graph";
 import { analyzeExports } from "./exports";
+import { getChurnData, normalizeChurn } from "./churn";
 
 type FilePath = string;
 export type ScoreNode = {
     path: FilePath;
     score: number;
+    structuralScore: number;
+    churnScore: number;
     valueExports: number;
     typeExports: number;
     isInCycle: boolean;
@@ -39,22 +42,33 @@ function computeDepthWeightedScore(impact: Map<FilePath, number>): number {
     return score;
 }
 
-export function buildScore(files: FilePath[], relevantFiles?: Set<FilePath>): void {
+export function buildScore(files: FilePath[], relevantFiles?: Set<FilePath>, repoDir?: string): void {
     const cycleNodes = detectCycles();
     const filesToScore = relevantFiles ? files.filter(f => relevantFiles.has(f)) : files;
+
+    const rawChurn = repoDir ? getChurnData(repoDir, filesToScore) : {};
+    const churn = normalizeChurn(rawChurn);
 
     for (const file of filesToScore) {
         const impact = getAffectedFilesWithDepth(file);
         const depthScore = computeDepthWeightedScore(impact);
+
         const exportInfo = analyzeExports(file);
         const exportScore = (exportInfo.valueExports * 0.5) + (exportInfo.typeExports * 0.2);
+
         const isInCycle = cycleNodes.has(file);
         const cycleMultiplier = isInCycle ? 2 : 1;
-        const finalScore = (depthScore + exportScore) * cycleMultiplier;
+
+        const structuralScore = (depthScore + exportScore) * cycleMultiplier;
+
+        const churnMultiplier = 1 + (churn[file] ?? 0);
+        const finalScore = structuralScore * churnMultiplier;
 
         scoreMap.set(file, {
             path: file,
             score: finalScore,
+            structuralScore,
+            churnScore: churn[file] ?? 0,
             valueExports: exportInfo.valueExports,
             typeExports: exportInfo.typeExports,
             isInCycle
